@@ -732,15 +732,24 @@ const marathonQuestions = [
             });
         }
 
-        function checkAnswer() {
-            const q = currentTest[currentQuestionIndex];
-            userAnswers[currentQuestionIndex] = 0; // заглушка
-            if (0 === q.correct) score++; // заглушка
-            document.getElementById('checkBtn').style.display = 'none';
-            document.getElementById('nextBtn').style.display = 'block';
-            document.getElementById('nextBtn').innerText =
-                currentQuestionIndex === currentTest.length - 1 ? 'Завершить тест' : 'Далее →';
+function selectAnswer(index) {
+    userAnswers[currentQuestionIndex] = index; // ← СОХРАНЯЕМ ВЫБОР!
+    document.querySelectorAll('.answer').forEach((el, i) => {function showMode(mode)
+        el.classList.remove('correct', 'incorrect');
+        if (i === currentTest[currentQuestionIndex].correct) {
+            el.classList.add('correct');
+        } else if (i === index && index !== currentTest[currentQuestionIndex].correct) {
+            el.classList.add('incorrect');
         }
+    });
+    score = userAnswers.filter((ans, i) => ans === currentTest[i].correct).length;
+    
+    document.getElementById('checkBtn').style.display = 'none';
+    document.getElementById('nextBtn').style.display = 'block';
+    document.getElementById('nextBtn').innerText =
+        currentQuestionIndex === currentTest.length - 1 ? 'Завершить тест' : 'Далее →';
+}
+
 
         function nextQuestion() {
             if (currentQuestionIndex < currentTest.length - 1) {
@@ -799,3 +808,4 @@ const marathonQuestions = [
     </script>
 </body>
 </html>
+
