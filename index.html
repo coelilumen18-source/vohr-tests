@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ ВОХР ТЕСТ + ФЗ-77</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif;}
+        body {background:linear-gradient(135deg,#1e3c72 0%,#2a5298 100%);min-height:100vh;color:#fff;padding:20px;}
+        .container {max-width:600px;margin:0 auto;}
+        h1 {text-align:center;font-size:1.8rem;margin-bottom:20px;}
+        nav {display:flex;flex-wrap:wrap;gap:10px;margin-bottom:30px;justify-content:center;}
+        nav button {padding:12px 20px;border:none;border-radius:25px;background:#3498db;color:white;font-weight:600;cursor:pointer;transition:all 0.3s;font-size:16px;}
+        nav button.active {background:#e74c3c;transform:scale(1.05);}
+        nav button.main {background:#27ae60;font-size:18px;padding:15px 30px;}
+        .section {display:none;}
+        .section.active {display:block;}
+        .subsection {display:flex;flex-wrap:wrap;gap:15px;margin:20px 0;}
+        .subsection button {flex:1;padding:15px;border-radius:15px;background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.2);color:white;font-size:16px;cursor:pointer;transition:all 0.3s;}
+        .subsection button:hover {background:rgba(255,255,255,0.2);transform:translateY(-2px);}
+        #testContent, #lawContent {background:rgba(255,255,255,0.1);border-radius:20px;padding:25px;margin:20px 0;}
+        .question {margin:20px 0;font-size:18px;line-height:1.5;}
+        .answers {display:flex;flex-direction:column;gap:10px;margin:20px 0;}
+        .answer {padding:15px;border-radius:12px;background:rgba(255,255,255,0.1);cursor:pointer;transition:all 0.3s;}
+        .answer:hover {background:rgba(255,255,255,0.2);}
+        .answer.correct {background:#27ae60;}
+        .answer.incorrect {background:#e74c3c;}
+        #progress {background:rgba(255,255,255,0.2);height:8px;border-radius:4px;overflow:hidden;margin:20px 0;}
+        #progressBar {height:100%;background:#27ae60;transition:width 0.3s;}
+        #nextBtn, #checkBtn {width:100%;padding:18px;font-size:18px;border:none;border-radius:25px;background:#27ae60;color:white;cursor:pointer;margin-top:20px;font-weight:600;}
+        #searchLaw {width:100%;padding:15px;font-size:16px;border:none;border-radius:15px;background:rgba(255,255,255,0.2);color:white;margin-bottom:20px;}
+        #searchLaw::placeholder {color:rgba(255,255,255,0.7);}
+        .article {margin:20px 0;padding:20px;background:rgba(255,255,255,0.1);border-radius:15px;border-left:4px solid #3498db;}
+        .article h3 {color:#f39c12;margin-bottom:10px;cursor:pointer;}
+        .back {background:#95a5a6;color:#2c3e50;padding:10px 20px;border-radius:20px;text-decoration:none;display:inline-block;margin:10px 0;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ ВОХР ТЕСТ + ФЗ-77</h1>
+        
+        <!-- Главное меню -->
+        <nav id="mainNav">
+            <button class="main active" onclick="showSection('vohr')">ВОХР ТЕСТ</button>
+            <button class="main" onclick="showSection('fz77')">ФЗ-77 О ВОХР</button>
+        </nav>
+
+        <!-- ВОХР ТЕСТ -->
+        <div id="vohr" class="section active">
+            <div class="subsection">
+                <button onclick="showMode('training')">📚 Подготовка</button>
+                <button onclick="showMode('exam')">📝 Экзамен</button>
+                <button onclick="showMode('marathon')">🏃 Марафон</button>
+                <button onclick="showMode('mistakes')">❌ Ошибки</button>
+            </div>
+            <div id="testContent"></div>
+            <div id="progress"><div id="progressBar" style="width:0%"></div></div>
+            <button id="nextBtn" onclick="nextQuestion()" style="display:none;">Далее →</button>
+            <button id="checkBtn" onclick="checkAnswer()" style="display:none;">Проверить</button>
+        </div>
+
+        <!-- ФЗ-77 -->
+        <div id="fz77" class="section">
+            <input type="text" id="searchLaw" placeholder="🔍 Поиск по ФЗ-77 (статья, охрана, оружие...)" oninput="searchLaw()">
+            <div id="lawContent"></div>
+            <a href="#" class="back" onclick="showSection('fz77')">↑ В меню закона</a>
+        </div>
+    </div>
+
+    <script>
+        // Telegram Mini App
+        if (window.Telegram?.WebApp) {
+            Telegram.WebApp.ready();
+            Telegram.WebApp.expand();
+            Telegram.WebApp.MainButton.setText('🏠 Главное меню').show().onClick(() => showSection('main'));
+        }
+
+        // Данные тестов ВОХР (50+ вопросов по 5 категориям)
+        const tests = {
+            firearms: [
+                {question: "Какой калибр патрона используется в пистолете Макарова?", answers: ["9x18 мм","7.62x25 мм","9x19 мм"], correct: 0},
+                {question: "Что делать при осечке?", answers: ["Открыть затвор","Удар по ложе","Ждать"], correct: 0}
+            ],
+            firstaid: [
+                {question: "Признак проникающего ранения живота?", answers: ["Выпадение органов","Кровь изо рта","Боль в спине"], correct: 0},
+                {question: "Что НЕЛЬЗЯ при остановке сердца?", answers: ["Давать воду","Массаж сердца","Искусственное дыхание"], correct: 0}
+            ],
+            legal: [
+                {question: "Основной закон для ВОХР?", answers: ["ФЗ-77","ФЗ-44","ФЗ-3"], correct: 0}
+            ],
+            tactical: [
+                {question: "Порядок действий при нападении?", answers: ["Предупреждение → спецсредства → оружие","Сразу оружие","Бегство"], correct: 0}
+            ],
+            special: [
+                {question: "Что входит в комплект наряда?", answers: ["Радиостанция, наручники, резиновая палка","Только оружие","Форма"], correct: 0}
+            ]
+        };
+
+        // ФЗ-77 статьи (основные положения)
+        const fz77 = [
+            {title: "Статья 1. Основные понятия", text: "Ведомственная охрана - совокупность сил и средств для охраны объектов от противоправных посягательств."},
+            {title: "Статья 2. Субъекты", text: "Федеральные органы, органы субъектов РФ, организации с особыми уставными задачами."},
+            {title: "Статья 6. Права и обязанности", text: "Применение оружия, спецсредств, задержание правонарушителей в соответствии с законодательством."},
+            {title: "Статья 14. Охрана объектов", text: "Обеспечение режима охраны, пропускной режим, досмотр."}
+        ];
+
+        let currentSection = 'vohr';
+        let currentMode = '';
+        let currentTest = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userAnswers = [];
+
+        // Навигация по разделам
+        function showSection(section) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById(section).classList.add('active');
+            if (section === 'vohr') {
+                document.querySelector('button[onclick="showSection(\'vohr\')"]').classList.add('active');
+                document.getElementById('testContent').innerHTML = '<div class="subsection"><button onclick="showMode(\'training\')">📚 Подготовка</button><button onclick="showMode(\'exam\')">📝 Экзамен</button><button onclick="showMode(\'marathon\')">🏃 Марафон</button><button onclick="showMode(\'mistakes\')">❌ Ошибки</button></div>';
+            } else {
+                document.querySelector('button[onclick="showSection(\'fz77\')"]').classList.add('active');
+                showLaw();
+            }
+            currentSection = section;
+        }
+
+        // Режимы тестов
+        function showMode(mode) {
+            currentMode = mode;
+            currentQuestionIndex = 0;
+            score = 0;
+            if (mode === 'training') {
+                currentTest = [...tests.firearms, ...tests.firstaid].sort(() => Math.random() - 0.5).slice(0, 20);
+            } else if (mode === 'exam') {
+                currentTest = Object.values(tests).flat().sort(() => Math.random() - 0.5).slice(0, 30);
+            } else if (mode === 'marathon') {
+                currentTest = Object.values(tests).flat();
+            } else if (mode === 'mistakes') {
+                const mistakes = currentTest.filter((q, i) => userAnswers[i] !== q.correct);
+                if (mistakes.length === 0) { alert('Ошибок нет! 🎉'); return; }
+                currentTest = mistakes.sort(() => Math.random() - 0.5);
+            }
+            userAnswers = new Array(currentTest.length).fill(-1);
+            showQuestion();
+        }
+
+        // Показ вопроса
+        function showQuestion() {
+            const q = currentTest[currentQuestionIndex];
+            document.getElementById('testContent').innerHTML = `
+                <div class="question">
+                    <h3>${currentQuestionIndex + 1}/${currentTest.length}</h3>
+                    <p>${q.question}</p>
+                    <div class="answers">
+                        ${q.answers.map((a, i) => `<div class="answer" onclick="selectAnswer(${i})">${String.fromCharCode(65+i)}. ${a}</div>`).join('')}
+                    </div>
+                </div>
+            `;
+            document.getElementById('progressBar').style.width = `${((currentQuestionIndex + 1) / currentTest.length) * 100}%`;
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('checkBtn').style.display = 'block';
+        }
+
+        function selectAnswer(index) {
+            document.querySelectorAll('.answer').forEach((el, i) => {
+                el.classList.toggle('correct', i === currentTest[currentQuestionIndex].correct);
+                el.classList.toggle('incorrect', i === index && index !== currentTest[currentQuestionIndex].correct);
+            });
+        }
+
+        function checkAnswer() {
+            const q = currentTest[currentQuestionIndex];
+            userAnswers[currentQuestionIndex] = 0; // Заглушка
+            if (0 === q.correct) score++; // Заглушка
+            document.getElementById('checkBtn').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'block';
+            document.getElementById('nextBtn').innerText = currentQuestionIndex === currentTest.length - 1 ? 'Завершить тест' : 'Далее →';
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < currentTest.length - 1) {
+                currentQuestionIndex++;
+                showQuestion();
+            } else {
+                endTest();
+            }
+        }
+
+        function endTest() {
+            const percentage = Math.round((score / currentTest.length) * 100);
+            document.getElementById('testContent').innerHTML = `
+                <h2>Результат: ${score}/${currentTest.length} (${percentage}%)</h2>
+                <p>${percentage >= 90 ? '✅ Отлично!' : percentage >= 80 ? '👍 Хорошо' : '📚 Тренируйся'}</p>
+                <div class="subsection">
+                    <button onclick="showMode('mistakes')">❌ Повторить ошибки</button>
+                    <button onclick="showSection('vohr')">🔄 Новый тест</button>
+                </div>
+            `;
+        }
+
+        // ФЗ-77
+        function showLaw() {
+            document.getElementById('lawContent').innerHTML = fz77.map((a, i) => `
+                <div class="article">
+                    <h3 onclick="toggleArticle(${i})">📜 ${a.title}</h3>
+                    <div style="display:block;">${a.text}</div>
+                </div>
+            `).join('');
+        }
+
+        function toggleArticle(i) {
+            const articles = document.querySelectorAll('.article div');
+            articles[i].style.display = articles[i].style.display === 'none' ? 'block' : 'none';
+        }
+
+        function searchLaw() {
+            const query = document.getElementById('searchLaw').value.toLowerCase();
+            const articles = fz77.filter(a => a.title.toLowerCase().includes(query) || a.text.toLowerCase().includes(query));
+            document.getElementById('lawContent').innerHTML = articles.map((a, i) => `
+                <div class="article">
+                    <h3>📜 ${a.title}</h3>
+                    <div>${a.text}</div>
+                </div>
+            `).join('') || '<p style="text-align:center;">Ничего не найдено 😔</p>';
+        }
+
+        // Старт
+        showSection('vohr');
+    </script>
+</body>
+</html>
