@@ -46,7 +46,7 @@
             <button class="main" onclick="showSection('fz77')">ФЗ-77 О ВОХР</button>
         </nav>
 
-        <!-- ВОХР ТЕСТ -->
+        <!-- ВОХР ТЕСТ (панель режимов ТОЛЬКО здесь) -->
         <div id="vohr" class="section active">
             <div class="subsection">
                 <button onclick="showMode('training')">📚 Подготовка</button>
@@ -54,7 +54,7 @@
                 <button onclick="showMode('marathon')">🏃 Марафон</button>
                 <button onclick="showMode('mistakes')">❌ Ошибки</button>
             </div>
-            <div id="testContent"></div>
+            <div id="testContent">Выберите режим, чтобы начать тест.</div>
             <div id="progress"><div id="progressBar" style="width:0%"></div></div>
             <button id="nextBtn" onclick="nextQuestion()" style="display:none;">Далее →</button>
             <button id="checkBtn" onclick="checkAnswer()" style="display:none;">Проверить</button>
@@ -73,18 +73,16 @@
         if (window.Telegram?.WebApp) {
             Telegram.WebApp.ready();
             Telegram.WebApp.expand();
-            Telegram.WebApp.MainButton.setText('🏠 Главное меню').show().onClick(() => showSection('main'));
+            Telegram.WebApp.MainButton.setText('🏠 Главное меню').show().onClick(() => showSection('vohr'));
         }
 
-        // Данные тестов ВОХР (50+ вопросов по 5 категориям)
+        // Данные тестов ВОХР
         const tests = {
             firearms: [
                 {question: "Какой калибр патрона используется в пистолете Макарова?", answers: ["9x18 мм","7.62x25 мм","9x19 мм"], correct: 0},
-                {question: "Что делать при осечке?", answers: ["Открыть затвор","Удар по ложе","Ждать"], correct: 0}
             ],
             firstaid: [
                 {question: "Признак проникающего ранения живота?", answers: ["Выпадение органов","Кровь изо рта","Боль в спине"], correct: 0},
-                {question: "Что НЕЛЬЗЯ при остановке сердца?", answers: ["Давать воду","Массаж сердца","Искусственное дыхание"], correct: 0}
             ],
             legal: [
                 {question: "Основной закон для ВОХР?", answers: ["ФЗ-77","ФЗ-44","ФЗ-3"], correct: 0}
@@ -97,7 +95,7 @@
             ]
         };
 
-        // ФЗ-77 статьи (основные положения)
+        // ФЗ-77 статьи (укороченная версия для навигации)
         const fz77 = [
             {title: "Статья 1. Основные понятия", text: "Ведомственная охрана - совокупность сил и средств для охраны объектов от противоправных посягательств."},
             {title: "Статья 2. Субъекты", text: "Федеральные органы, органы субъектов РФ, организации с особыми уставными задачами."},
@@ -112,18 +110,20 @@
         let score = 0;
         let userAnswers = [];
 
-        // Навигация по разделам
+        // Навигация по разделам (без автодобавления панели в testContent)
         function showSection(section) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+
             document.getElementById(section).classList.add('active');
+
             if (section === 'vohr') {
                 document.querySelector('button[onclick="showSection(\'vohr\')"]').classList.add('active');
-                document.getElementById('testContent').innerHTML = '<div class="subsection"><button onclick="showMode(\'training\')">📚 Подготовка</button><button onclick="showMode(\'exam\')">📝 Экзамен</button><button onclick="showMode(\'marathon\')">🏃 Марафон</button><button onclick="showMode(\'mistakes\')">❌ Ошибки</button></div>';
-            } else {
+            } else if (section === 'fz77') {
                 document.querySelector('button[onclick="showSection(\'fz77\')"]').classList.add('active');
                 showLaw();
             }
+
             currentSection = section;
         }
 
@@ -132,10 +132,11 @@
             currentMode = mode;
             currentQuestionIndex = 0;
             score = 0;
+
             if (mode === 'training') {
-                currentTest = [...tests.firearms, ...tests.firstaid].sort(() => Math.random() - 0.5).slice(0, 20);
+                currentTest = [...tests.firearms, ...tests.firstaid].sort(() => Math.random() - 0.5).slice(0, 2);
             } else if (mode === 'exam') {
-                currentTest = Object.values(tests).flat().sort(() => Math.random() - 0.5).slice(0, 30);
+                currentTest = Object.values(tests).flat().sort(() => Math.random() - 0.5).slice(0, 5);
             } else if (mode === 'marathon') {
                 currentTest = Object.values(tests).flat();
             } else if (mode === 'mistakes') {
@@ -143,6 +144,7 @@
                 if (mistakes.length === 0) { alert('Ошибок нет! 🎉'); return; }
                 currentTest = mistakes.sort(() => Math.random() - 0.5);
             }
+
             userAnswers = new Array(currentTest.length).fill(-1);
             showQuestion();
         }
@@ -173,11 +175,12 @@
 
         function checkAnswer() {
             const q = currentTest[currentQuestionIndex];
-            userAnswers[currentQuestionIndex] = 0; // Заглушка
-            if (0 === q.correct) score++; // Заглушка
+            userAnswers[currentQuestionIndex] = 0; // заглушка
+            if (0 === q.correct) score++; // заглушка
             document.getElementById('checkBtn').style.display = 'none';
             document.getElementById('nextBtn').style.display = 'block';
-            document.getElementById('nextBtn').innerText = currentQuestionIndex === currentTest.length - 1 ? 'Завершить тест' : 'Далее →';
+            document.getElementById('nextBtn').innerText =
+                currentQuestionIndex === currentTest.length - 1 ? 'Завершить тест' : 'Далее →';
         }
 
         function nextQuestion() {
@@ -199,6 +202,8 @@
                     <button onclick="showSection('vohr')">🔄 Новый тест</button>
                 </div>
             `;
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('checkBtn').style.display = 'none';
         }
 
         // ФЗ-77
@@ -218,7 +223,10 @@
 
         function searchLaw() {
             const query = document.getElementById('searchLaw').value.toLowerCase();
-            const articles = fz77.filter(a => a.title.toLowerCase().includes(query) || a.text.toLowerCase().includes(query));
+            const articles = fz77.filter(a =>
+                a.title.toLowerCase().includes(query) ||
+                a.text.toLowerCase().includes(query)
+            );
             document.getElementById('lawContent').innerHTML = articles.map((a, i) => `
                 <div class="article">
                     <h3>📜 ${a.title}</h3>
