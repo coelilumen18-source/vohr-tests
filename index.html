@@ -686,26 +686,26 @@ const marathonQuestions = [
 
         // Режимы тестов
         function showMode(mode) {
-            currentMode = mode;
-            currentQuestionIndex = 0;
-            score = 0;
+    currentMode = mode;
+    currentQuestionIndex = 0;
+    score = 0;
 
-            if (mode === 'training') {
-                currentTest = [...tests.firearms, ...tests.firstaid].sort(() => Math.random() - 0.5).slice(0, 2);
-    currentTest = marathonQuestions.slice().sort(() => Math.random() - 0.5);
+    if (mode === 'training') {
+        currentTest = [...tests.firearms, ...tests.firstaid, ...tests.legal].sort(() => Math.random() - 0.5).slice(0, 5);
+    } else if (mode === 'exam') {
+        currentTest = Object.values(tests).flat().sort(() => Math.random() - 0.5).slice(0, 10);
+    } else if (mode === 'marathon') {
+        currentTest = marathonQuestions.slice(0, 25).sort(() => Math.random() - 0.5); // только рабочие
+    } else if (mode === 'mistakes') {
+        const mistakes = currentTest.filter((q, i) => userAnswers[i] !== q.correct);
+        if (mistakes.length === 0) { alert('Ошибок нет! 🎉'); return; }
+        currentTest = mistakes;
+    }
+
+    userAnswers = new Array(currentTest.length).fill(-1);
+    showQuestion();
 }
-            } else if (mode === 'exam') {
-                currentTest = Object.values(tests).flat().sort(() => Math.random() - 0.5).slice(0, 5);
-            } else if (mode === 'marathon') {
-                ;
-            } else if (mode === 'mistakes') {
-                const mistakes = currentTest.filter((q, i) => userAnswers[i] !== q.correct);
-                if (mistakes.length === 0) { alert('Ошибок нет! 🎉'); return; }
-                currentTest = mistakes.sort(() => Math.random() - 0.5);
-            }
 
-            userAnswers = new Array(currentTest.length).fill(-1);
-            showQuestion();
         }
 
         // Показ вопроса
@@ -725,16 +725,11 @@ const marathonQuestions = [
             document.getElementById('checkBtn').style.display = 'block';
         }
 
-        function selectAnswer(index) {
-            document.querySelectorAll('.answer').forEach((el, i) => {
-                el.classList.toggle('correct', i === currentTest[currentQuestionIndex].correct);
-                el.classList.toggle('incorrect', i === index && index !== currentTest[currentQuestionIndex].correct);
-            });
-        }
+       let selectedAnswer = -1;
 
 function selectAnswer(index) {
-    userAnswers[currentQuestionIndex] = index; // ← СОХРАНЯЕМ ВЫБОР!
-    document.querySelectorAll('.answer').forEach((el, i) => {function showMode(mode)
+    selectedAnswer = index;
+    document.querySelectorAll('.answer').forEach((el, i) => {
         el.classList.remove('correct', 'incorrect');
         if (i === currentTest[currentQuestionIndex].correct) {
             el.classList.add('correct');
@@ -742,13 +737,16 @@ function selectAnswer(index) {
             el.classList.add('incorrect');
         }
     });
-    score = userAnswers.filter((ans, i) => ans === currentTest[i].correct).length;
-    
+}
+
+function checkAnswer() {
+    userAnswers[currentQuestionIndex] = selectedAnswer;
+    score = userAnswers.filter((ans, i) => ans === currentTest[i]?.correct).length;
     document.getElementById('checkBtn').style.display = 'none';
     document.getElementById('nextBtn').style.display = 'block';
-    document.getElementById('nextBtn').innerText =
-        currentQuestionIndex === currentTest.length - 1 ? 'Завершить тест' : 'Далее →';
+    document.getElementById('nextBtn').innerText = currentQuestionIndex === currentTest.length - 1 ? 'Завершить тест' : 'Далее →';
 }
+
 
 
         function nextQuestion() {
@@ -808,4 +806,5 @@ function selectAnswer(index) {
     </script>
 </body>
 </html>
+
 
