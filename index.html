@@ -273,7 +273,7 @@ const marathonQuestions = [
             "Кровотечение при поражении внутренних органов (почки, селезёнка и т. д.).",
             "Кровотечение при поражении затылочной части головы."
         ],
-        correct: 1}
+        correct: 1},
     {
         question: "Боеприпасы — это:",
         answers: [
@@ -692,13 +692,12 @@ const marathonQuestions = [
 
             if (mode === 'training') {
                 currentTest = [...tests.firearms, ...tests.firstaid].sort(() => Math.random() - 0.5).slice(0, 2);
-} else if (mode === 'marathon') {
     currentTest = marathonQuestions.slice().sort(() => Math.random() - 0.5);
 }
             } else if (mode === 'exam') {
                 currentTest = Object.values(tests).flat().sort(() => Math.random() - 0.5).slice(0, 5);
             } else if (mode === 'marathon') {
-                currentTest = Object.values(tests).flat();
+                ;
             } else if (mode === 'mistakes') {
                 const mistakes = currentTest.filter((q, i) => userAnswers[i] !== q.correct);
                 if (mistakes.length === 0) { alert('Ошибок нет! 🎉'); return; }
